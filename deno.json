@@ -1,12 +1,27 @@
 {
   "name": "@carlosxfelipe/solid-lite",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "A minimalist implementation of the SolidJS reactivity engine running natively on Deno, featuring granular reactivity using the real DOM without a complex compiler.",
   "exports": "./solid-lite.js",
   "publish": {
     "include": [
       "solid-lite.js",
+      "solid-lite.min.js",
+      "solid-lite.d.ts",
       "README.md",
       "LICENSE"
+    ]
+  },
+  "supportedRuntimes": {
+    "browser": true,
+    "deno": true,
+    "workerd": true
+  },
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "esnext",
+      "deno.ns"
     ]
   }
 }

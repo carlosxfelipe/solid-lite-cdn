@@ -1,9 +1,12 @@
 /**
  * @module
- * Solid Lite - A minimalist reactive UI library.
+ * Solid Lite - A minimalist implementation of the SolidJS reactivity engine.
  * 
- * This module provides the core reactivity and rendering engine for Solid Lite.
+ * This module provides fine-grained reactivity and a runtime JSX-like (HyperScript)
+ * engine that works directly with the real DOM.
  */
+
+// @ts-self-types="./solid-lite.d.ts"
 
 const sharedConfig = {
     context: undefined,

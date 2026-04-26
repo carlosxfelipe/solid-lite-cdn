@@ -1,14 +1,15 @@
 # Solid Lite
 
-A minimalist, high-performance reactive UI library inspired by SolidJS, designed for zero-dependency usage and native performance.
+A minimalist implementation of the SolidJS reactivity engine running natively on Deno, featuring granular reactivity using the real DOM without a complex compiler.
 
 ## Features
 
-- **Fine-grained reactivity**: Only updates exactly what needs to change.
-- **Zero dependencies**: Pure JavaScript/TypeScript.
-- **Native performance**: Leverages modern DOM APIs.
-- **Lightweight**: Optimized for small bundles and CDN delivery.
+- **Fine-grained reactivity**: Uses signals and effects for surgical updates to the real DOM.
+- **JSX Runtime**: Interface processing via a HyperScript (h) function at runtime.
+- **No Virtual DOM**: Unlike React, changes are applied directly to browser nodes.
+- **Zero dependencies**: Pure JavaScript/TypeScript without external bloat.
 - **Deno & JSR Native**: Fully compatible with the modern JavaScript ecosystem.
+- **Lightweight**: Optimized for small bundles and fast CDN delivery.
 
 ## Installation
 
@@ -22,7 +23,7 @@ npx jsr add @carlosxfelipe/solid-lite
 ### Via CDN
 ```html
 <script type="module">
-  import { createSignal, render, h } from "https://jsr.io/@carlosxfelipe/solid-lite/1.0.0/solid-lite.js";
+  import { createSignal, render, h } from "https://jsr.io/@carlosxfelipe/solid-lite/1.0.1/solid-lite.js";
   
   function Counter() {
     const [count, setCount] = createSignal(0);
@@ -31,7 +32,7 @@ npx jsr add @carlosxfelipe/solid-lite
     }, () => `Count: ${count()}`);
   }
 
-  render(Counter, document.body);
+  render(h(Counter), document.body);
 </script>
 ```
 
@@ -53,8 +54,18 @@ function App() {
   ]);
 }
 
-render(App, document.getElementById("app"));
+render(h(App), document.getElementById("app"));
 ```
+
+---
+
+## Important Note
+
+**SolidJS** is a trademark of its respective owners.
+
+This project, **Solid Lite**, is an independent, minimalist, and **strictly experimental** implementation of a reactive runtime inspired by the principles of SolidJS. It was created solely for educational purposes to demonstrate how fine-grained reactivity and Single Page Application (SPA) architectures can be built using the native DOM on Deno.
+
+**Solid Lite has no commercial or business objectives.** It is a study of architectural concepts and a hobbyist experiment in building lean web runtimes.
 
 ## License
 
