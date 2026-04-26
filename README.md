@@ -23,7 +23,7 @@ npx jsr add @carlosxfelipe/solid-lite
 ### Via CDN
 ```html
 <script type="module">
-  import { createSignal, render, h } from "https://jsr.io/@carlosxfelipe/solid-lite/1.0.1/solid-lite.js";
+  import { createSignal, render, h } from "https://esm.sh/jsr/@carlosxfelipe/solid-lite@1.0.2";
   
   function Counter() {
     const [count, setCount] = createSignal(0);
