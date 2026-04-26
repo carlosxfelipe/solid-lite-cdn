@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solid Lite | CDN Distribution</title>
+    <style>
+      :root {
+        --background: 0 0% 100%;
+        --foreground: 240 10% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 240 10% 3.9%;
+        --primary: 240 5.9% 10%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 240 4.8% 95.9%;
+        --secondary-foreground: 240 5.9% 10%;
+        --muted: 240 4.8% 95.9%;
+        --muted-foreground: 240 3.8% 46.1%;
+        --accent: 240 4.8% 95.9%;
+        --accent-foreground: 240 5.9% 10%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 5.9% 90%;
+        --radius: 0.5rem;
+
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: 240 10% 3.9%;
+          --foreground: 0 0% 98%;
+          --card: 240 10% 3.9%;
+          --card-foreground: 0 0% 98%;
+          --primary: 0 0% 98%;
+          --primary-foreground: 240 5.9% 10%;
+          --secondary: 240 3.7% 15.1%;
+          --secondary-foreground: 0 0% 98%;
+          --muted: 240 3.7% 15.1%;
+          --muted-foreground: 240 5% 64.9%;
+          --accent: 240 3.7% 15.1%;
+          --accent-foreground: 0 0% 98%;
+          --destructive: 0 62.8% 30.6%;
+          --destructive-foreground: 0 0% 98%;
+          --border: 240 3.7% 15.1%;
+        }
+      }
+
+      body {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        margin-left: auto;
+        margin-right: auto;
+        padding: 1.5rem;
+        max-width: 800px;
+      }
+
+      .title {
+        font-size: 2.25rem;
+        font-weight: 700;
+        letter-spacing: -0.05em;
+        margin-bottom: 0.5rem;
+        margin-top: 2rem;
+      }
+
+      .description {
+        color: hsl(var(--muted-foreground));
+        font-size: 1.125rem;
+        margin-bottom: 2rem;
+      }
+
+      .card {
+        padding: 1.5rem;
+        background-color: hsl(var(--card));
+        color: hsl(var(--card-foreground));
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--border));
+        box-shadow:
+          0 1px 3px 0 rgba(0, 0, 0, 0.1),
+          0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      }
+
+      .label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: hsl(var(--muted-foreground));
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .counter-value {
+        font-size: 4rem;
+        font-weight: 700;
+        letter-spacing: -0.05em;
+        margin-bottom: 1.5rem;
+        color: hsl(var(--foreground));
+      }
+
+      .button-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 1rem;
+        border-radius: calc(var(--radius) - 2px);
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        cursor: pointer;
+        height: 2.5rem;
+        border: 1px solid transparent;
+        user-select: none;
+      }
+
+      .btn-primary {
+        background-color: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+      }
+
+      .btn-secondary {
+        background-color: hsl(var(--secondary));
+        color: hsl(var(--secondary-foreground));
+        border: 1px solid hsl(var(--border));
+      }
+
+      .btn-danger {
+        background-color: hsl(var(--destructive));
+        color: hsl(var(--destructive-foreground));
+      }
+
+      .btn-primary:hover,
+      .btn-danger:hover {
+        opacity: 0.9;
+      }
+
+      .btn-secondary:hover {
+        background-color: hsl(var(--accent));
+      }
+
+      .btn-icon {
+        flex: 1;
+      }
+
+      .btn-reset {
+        margin-left: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" id="app"></div>
+
+    <script type="module">
+      import {
+        createEffect,
+        createSignal,
+        h,
+        render,
+      } from "./solid-lite.min.js";
+
+      function Counter() {
+        const [count, setCount] = createSignal(
+          Number(localStorage.getItem("solid_lite_count") || 0),
+        );
+
+        createEffect(() => {
+          localStorage.setItem("solid_lite_count", count().toString());
+        });
+
+        return h(
+          "div",
+          { class: "card" },
+          h(
+            "div",
+            { class: "label" },
+            h("span", null, "+"),
+            "Reactive Counter",
+          ),
+          h("div", { class: "counter-value" }, count),
+          h(
+            "div",
+            { class: "button-group" },
+            h("button", {
+              class: "btn btn-secondary btn-icon",
+              onClick: () => setCount(count() - 1),
+            }, "-"),
+            h("button", {
+              class: "btn btn-primary btn-icon",
+              onClick: () => setCount(count() + 1),
+            }, "+"),
+            h("button", {
+              class: "btn btn-danger btn-reset",
+              onClick: () => setCount(0),
+            }, "Reset"),
+          ),
+        );
+      }
+
+      function App() {
+        return h(
+          "div",
+          null,
+          h("h1", { class: "title" }, "Solid Lite"),
+          h(
+            "p",
+            { class: "description" },
+            "A minimalist and high-performance implementation inspired by SolidJS.",
+          ),
+          h(Counter),
+        );
+      }
+
+      render(h(App), document.getElementById("app"));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "@carlos/solid-lite",
+  "version": "1.0.0",
+  "exports": "./solid-lite.js",
+  "publish": {
+    "include": [
+      "solid-lite.js",
+      "README.md",
+      "LICENSE"
+    ]
+  }
+}
