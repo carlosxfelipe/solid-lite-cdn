@@ -14,15 +14,15 @@ A minimalist, high-performance reactive UI library inspired by SolidJS, designed
 
 ### From JSR
 ```bash
-deno add @carlos/solid-lite
+deno add @carlosxfelipe/solid-lite
 # or
-npx jsr add @carlos/solid-lite
+npx jsr add @carlosxfelipe/solid-lite
 ```
 
 ### Via CDN
 ```html
 <script type="module">
-  import { createSignal, render, h } from "https://jsr.io/@carlos/solid-lite/1.0.0/solid-lite.js";
+  import { createSignal, render, h } from "https://jsr.io/@carlosxfelipe/solid-lite/1.0.0/solid-lite.js";
   
   function Counter() {
     const [count, setCount] = createSignal(0);
@@ -38,7 +38,7 @@ npx jsr add @carlos/solid-lite
 ## Usage
 
 ```javascript
-import { createSignal, createEffect, render, h } from "@carlos/solid-lite";
+import { createSignal, createEffect, render, h } from "@carlosxfelipe/solid-lite";
 
 function App() {
   const [count, setCount] = createSignal(0);
