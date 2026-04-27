@@ -76,6 +76,21 @@ function App() {
 render(h(App), document.getElementById("app"));
 ```
 
+## Development / CDN Build
+
+The core framework used to generate this CDN package is developed at:  
+[https://github.com/carlosxfelipe/solid-lite](https://github.com/carlosxfelipe/solid-lite)
+
+To build the CDN files (ESM development and minified production versions), use the following Deno task:
+
+```bash
+deno task build:cdn
+```
+
+This command executes `scripts/build_cdn.ts` and outputs the compiled files into the `dist/` directory:
+- `dist/solid-lite.js` (ESM development)
+- `dist/solid-lite.min.js` (ESM production)
+
 ---
 
 ## Important Note
