@@ -37,7 +37,7 @@ npx jsr add @carlosxfelipe/solid-lite
     createSignal,
     h,
     render,
-  } from "https://esm.sh/jsr/@carlosxfelipe/solid-lite@1.0.3";
+  } from "https://esm.sh/jsr/@carlosxfelipe/solid-lite@1.0.4";
 
   function Counter() {
     const [count, setCount] = createSignal(0);
@@ -90,6 +90,31 @@ deno task build:cdn
 This command executes `scripts/build_cdn.ts` and outputs the compiled files into the `dist/` directory:
 - `dist/solid-lite.js` (ESM development)
 - `dist/solid-lite.min.js` (ESM production)
+
+## Differences with SolidJS
+
+Although inspired by SolidJS, **Solid Lite** is a pure runtime implementation with no compilation step. This leads to key syntax differences:
+
+| Aspect | Solid Lite | SolidJS |
+| --- | --- | --- |
+| **Signal in JSX** | Pass the getter: `h("div", null, count)` | Call the getter: `<div>{count()}</div>` |
+| **Compiler** | **None** (Pure JavaScript) | Required (Babel/Vite plugin) |
+| **Reading Signals** | Pass function reference for reactivity | Compiler rewrites calls to be reactive |
+| **Reactivity** | Functions are tracked by the runtime | Values are tracked via compiler magic |
+
+> ⚠️ **Important:** When using Solid Lite, pass your signals as function references (e.g., `count`) to the `h()` function. Calling them (e.g., `count()`) will evaluate the value immediately and you will lose reactivity.
+
+### Comparison Table
+
+| Feature | solid-lite | SolidJS |
+| --- | --- | --- |
+| Signal in JSX | `count` (getter) | `count()` |
+| `<Show when>` | `when={fn}` | `when={fn()}` |
+| `<For each>` | `each={fn}` | `each={fn()}` |
+| Style Object | Supports nested signals | Requires called signals |
+| Mount | `createRoot` + `render` | `render(() => ..., el)` |
+| Directives | Not supported | Supported |
+
 
 ---
 
