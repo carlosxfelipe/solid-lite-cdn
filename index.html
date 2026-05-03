@@ -9,11 +9,9 @@
         --background: 0 0% 100%;
         --foreground: 240 10% 3.9%;
         --card: 0 0% 100%;
-        --card-foreground: 240 10% 3.9%;
         --muted: 240 4.8% 95.9%;
         --muted-foreground: 240 3.8% 46.1%;
         --border: 240 5.9% 90%;
-        --radius: 0.5rem;
 
         font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
         -webkit-font-smoothing: antialiased;
@@ -24,7 +22,6 @@
           --background: 240 10% 3.9%;
           --foreground: 0 0% 98%;
           --card: 240 10% 3.9%;
-          --card-foreground: 0 0% 98%;
           --muted: 240 3.7% 15.1%;
           --muted-foreground: 240 5% 64.9%;
           --border: 240 3.7% 15.1%;
@@ -132,15 +129,15 @@
         createSignal,
         h,
         render,
-      } from "https://esm.sh/jsr/@carlosxfelipe/solid-lite@1.0.3";
+      } from "https://esm.sh/jsr/@carlosxfelipe/solid-lite@1.0.4";
 
       function Counter() {
         const [count, setCount] = createSignal(
-          Number(localStorage.getItem("solid_lite_count") || 13),
+          Number(localStorage.getItem("count") || 13),
         );
 
         createEffect(() => {
-          localStorage.setItem("solid_lite_count", count().toString());
+          localStorage.setItem("count", count().toString());
         });
 
         return h(
