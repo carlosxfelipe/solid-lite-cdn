@@ -614,6 +614,22 @@ function createProvider(id, options) {
 }
 Symbol("fallback");
 createContext();
+const SIGNAL = Symbol.for("solid-lite.signal");
+function tagAccessor(fn) {
+    fn[SIGNAL] = true;
+    return fn;
+}
+const createSignal1 = (value, options)=>{
+    const tuple = createSignal(value, options);
+    return [
+        tagAccessor(tuple[0]),
+        tuple[1]
+    ];
+};
+const createMemo1 = (fn)=>{
+    const m = createMemo(fn);
+    return tagAccessor(m);
+};
 const DISPOSE = Symbol("d");
 const HANDLERS = Symbol("h");
 const delegatedEvents = new Set();
@@ -647,8 +663,9 @@ function isInnerHTML(x) {
     return !!x && typeof x === "object" && "__html" in x;
 }
 function isSignalGetter(x) {
-    return typeof x === "function" && x.length === 0;
+    return typeof x === "function";
 }
+const isChildThunk = isSignalGetter;
 const CAMEL_TO_KEBAB = /[A-Z]/g;
 function camelToKebab(k) {
     return k.startsWith("--") ? k : k.replace(CAMEL_TO_KEBAB, (m)=>"-" + m.toLowerCase());
@@ -961,7 +978,7 @@ function h(tag, props, ...children) {
         for (const [k, v] of Object.entries(props))setAttr(el, k, v);
     }
     for (const c of children.flat()){
-        if (isSignalGetter(c)) appendDynamic(el, c);
+        if (isChildThunk(c)) appendDynamic(el, c);
         else appendStatic(el, c);
     }
     return el;
@@ -970,7 +987,7 @@ function Fragment(props = {}, ...kids) {
     const list = props.children ?? kids;
     const f = document.createDocumentFragment();
     for (const k of (list ?? []).flat()){
-        if (isSignalGetter(k)) appendDynamic(f, k);
+        if (isChildThunk(k)) appendDynamic(f, k);
         else appendStatic(f, k);
     }
     return f;
@@ -1031,7 +1048,7 @@ function For(props) {
                 let dispose = ()=>{};
                 const nodes = createRoot((d)=>{
                     dispose = d;
-                    const [index, _setIndex] = createSignal(i);
+                    const [index, _setIndex] = createSignal1(i);
                     setIndex = _setIndex;
                     return normalizeToNodes(renderFn(item, index));
                 });
@@ -1092,8 +1109,9 @@ function Match(props) {
     };
 }
 export { createRoot as createRoot };
-export { createSignal as createSignal };
+export { createSignal1 as createSignal };
 export { createEffect as createEffect };
+export { createMemo1 as createMemo };
 export { onCleanup as onCleanup };
 export { h as h };
 export { Fragment as Fragment };
