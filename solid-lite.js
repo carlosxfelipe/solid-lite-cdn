@@ -39,12 +39,7 @@ let ERROR = null;
 let runEffects = runQueue;
 const STALE = 1;
 const PENDING = 2;
-const UNOWNED = {
-    owned: null,
-    cleanups: null,
-    context: null,
-    owner: null
-};
+const UNOWNED = {};
 var Owner = null;
 let Transition = null;
 let Scheduler = null;
@@ -53,13 +48,27 @@ let Listener = null;
 let Updates = null;
 let Effects = null;
 let ExecCount = 0;
+const DevHooks = {
+    afterUpdate: null,
+    afterCreateOwner: null,
+    afterCreateSignal: null,
+    afterRegisterGraph: null
+};
 function createRoot(fn, detachedOwner) {
-    const listener = Listener, owner = Owner, unowned = fn.length === 0, current = detachedOwner === undefined ? owner : detachedOwner, root = unowned ? UNOWNED : {
+    const listener = Listener, owner = Owner, unowned = fn.length === 0, current = detachedOwner === undefined ? owner : detachedOwner, root = unowned ? {
+        owned: null,
+        cleanups: null,
+        context: null,
+        owner: null
+    } : {
         owned: null,
         cleanups: null,
         context: current ? current.context : null,
         owner: current
-    }, updateFn = unowned ? fn : ()=>fn(()=>untrack(()=>cleanNode(root)));
+    }, updateFn = unowned ? ()=>fn(()=>{
+            throw new Error("Dispose method must be an explicit argument to createRoot function");
+        }) : ()=>fn(()=>untrack(()=>cleanNode(root)));
+    DevHooks.afterCreateOwner && DevHooks.afterCreateOwner(root);
     Owner = root;
     Listener = null;
     try {
@@ -77,6 +86,15 @@ function createSignal(value, options) {
         observerSlots: null,
         comparator: options.equals || undefined
     };
+    {
+        if (options.name) s.name = options.name;
+        if (options.internal) {
+            s.internal = true;
+        } else {
+            registerGraph(s);
+            if (DevHooks.afterCreateSignal) DevHooks.afterCreateSignal(s);
+        }
+    }
     const setter = (value)=>{
         if (typeof value === "function") {
             if (Transition && Transition.running && Transition.sources.has(s)) value = value(s.tValue);
@@ -90,20 +108,20 @@ function createSignal(value, options) {
     ];
 }
 function createRenderEffect(fn, value, options) {
-    const c = createComputation(fn, value, false, 1);
+    const c = createComputation(fn, value, false, 1, options);
     if (Scheduler && Transition && Transition.running) Updates.push(c);
     else updateComputation(c);
 }
 function createEffect(fn, value, options) {
     runEffects = runUserEffects;
-    const c = createComputation(fn, value, false, 1), s = SuspenseContext && useContext(SuspenseContext);
+    const c = createComputation(fn, value, false, 1, options), s = SuspenseContext && useContext(SuspenseContext);
     if (s) c.suspense = s;
     if (!options || !options.render) c.user = true;
     Effects ? Effects.push(c) : updateComputation(c);
 }
 function createMemo(fn, value, options) {
     options = options ? Object.assign({}, signalOptions, options) : signalOptions;
-    const c = createComputation(fn, value, true, 0);
+    const c = createComputation(fn, value, true, 0, options);
     c.observers = null;
     c.observerSlots = null;
     c.comparator = options.equals || undefined;
@@ -125,7 +143,7 @@ function untrack(fn) {
     }
 }
 function onCleanup(fn) {
-    if (Owner === null) ;
+    if (Owner === null) console.warn("cleanups created outside a `createRoot` or `render` will never be run");
     else if (Owner.cleanups === null) Owner.cleanups = [
         fn
     ];
@@ -161,11 +179,21 @@ function startTransition(fn) {
     });
 }
 const [transPending, setTransPending] = createSignal(false);
+function registerGraph(value) {
+    if (Owner) {
+        if (Owner.sourceMap) Owner.sourceMap.push(value);
+        else Owner.sourceMap = [
+            value
+        ];
+        value.graph = Owner;
+    }
+    if (DevHooks.afterRegisterGraph) DevHooks.afterRegisterGraph(value);
+}
 function createContext(defaultValue, options) {
     const id = Symbol("context");
     return {
         id,
-        Provider: createProvider(id),
+        Provider: createProvider(id, options),
         defaultValue
     };
 }
@@ -175,7 +203,9 @@ function useContext(context) {
 }
 function children(fn) {
     const children = createMemo(fn);
-    const memo = createMemo(()=>resolveChildren(children()));
+    const memo = createMemo(()=>resolveChildren(children()), undefined, {
+        name: "children"
+    });
     memo.toArray = ()=>{
         const c = memo();
         return Array.isArray(c) ? c : c != null ? [
@@ -251,7 +281,7 @@ function writeSignal(node, value, isComp) {
                 }
                 if (Updates.length > 10e5) {
                     Updates = [];
-                    if (false) ;
+                    if (false) throw new Error("Potential Infinite Loop Detected.");
                     throw new Error();
                 }
             }, false);
@@ -303,6 +333,7 @@ function runComputation(node, value, time) {
         if (node.updatedAt != null && "observers" in node) {
             writeSignal(node, nextValue, true);
         } else if (Transition && Transition.running && node.pure) {
+            if (!Transition.sources.has(node)) node.value = nextValue;
             Transition.sources.add(node);
             node.tValue = nextValue;
         } else node.value = nextValue;
@@ -327,7 +358,7 @@ function createComputation(fn, init, pure, state = 1, options) {
         c.state = 0;
         c.tState = state;
     }
-    if (Owner === null) ;
+    if (Owner === null) console.warn("computations created outside a `createRoot` or `render` will never be disposed");
     else if (Owner !== UNOWNED) {
         if (Transition && Transition.running && Owner.pure) {
             if (!Owner.tOwned) Owner.tOwned = [
@@ -341,19 +372,31 @@ function createComputation(fn, init, pure, state = 1, options) {
             else Owner.owned.push(c);
         }
     }
+    if (options && options.name) c.name = options.name;
     if (ExternalSourceConfig && c.fn) {
+        const sourceFn = c.fn;
         const [track, trigger] = createSignal(undefined, {
             equals: false
         });
-        const ordinary = ExternalSourceConfig.factory(c.fn, trigger);
+        const ordinary = ExternalSourceConfig.factory(sourceFn, trigger);
         onCleanup(()=>ordinary.dispose());
-        const triggerInTransition = ()=>startTransition(trigger).then(()=>inTransition.dispose());
-        const inTransition = ExternalSourceConfig.factory(c.fn, triggerInTransition);
+        let inTransition;
+        const triggerInTransition = ()=>startTransition(trigger).then(()=>{
+                if (inTransition) {
+                    inTransition.dispose();
+                    inTransition = undefined;
+                }
+            });
         c.fn = (x)=>{
             track();
-            return Transition && Transition.running ? inTransition.track(x) : ordinary.track(x);
+            if (Transition && Transition.running) {
+                if (!inTransition) inTransition = ExternalSourceConfig.factory(sourceFn, triggerInTransition);
+                return inTransition.track(x);
+            }
+            return ordinary.track(x);
         };
     }
+    DevHooks.afterCreateOwner && DevHooks.afterCreateOwner(c);
     return c;
 }
 function runTop(node) {
@@ -447,6 +490,7 @@ function completeUpdates(wait) {
     const e = Effects;
     Effects = null;
     if (e.length) runUpdates(()=>runEffects(e), false);
+    else DevHooks.afterUpdate && DevHooks.afterUpdate();
     if (res) res();
 }
 function runQueue(queue) {
@@ -552,6 +596,7 @@ function cleanNode(node) {
     }
     if (Transition && Transition.running) node.tState = 0;
     else node.state = 0;
+    delete node.sourceMap;
 }
 function reset(node, top) {
     if (!top) {
@@ -608,12 +653,16 @@ function createProvider(id, options) {
                     [id]: props.value
                 };
                 return children(()=>props.children);
-            }), undefined);
+            }), undefined, options);
         return res;
     };
 }
 Symbol("fallback");
 createContext();
+if (globalThis) {
+    if (!globalThis.Solid$$) globalThis.Solid$$ = true;
+    else console.warn("You appear to have multiple instances of Solid. This can lead to unexpected behavior.");
+}
 const SIGNAL = Symbol.for("solid-lite.signal");
 function tagAccessor(fn) {
     fn[SIGNAL] = true;
@@ -626,10 +675,47 @@ const createSignal1 = (value, options)=>{
         tuple[1]
     ];
 };
+export { createEffect as createEffect };
 const createMemo1 = (fn)=>{
     const m = createMemo(fn);
     return tagAccessor(m);
 };
+const derived = (fn)=>tagAccessor(fn);
+export { onCleanup as onCleanup };
+function makePersisted(signal, options) {
+    const { name, storage = localStorage, serialize = (v)=>JSON.stringify(v), deserialize = (v)=>JSON.parse(v), sync = true } = options;
+    const [getter, setter] = signal;
+    const storedValue = storage.getItem(name);
+    if (storedValue !== null) {
+        try {
+            setter(()=>deserialize(storedValue));
+        } catch (err) {
+            console.warn(`[makePersisted] Failed to deserialize "${name}":`, err);
+        }
+    }
+    createEffect(()=>{
+        try {
+            const value = getter();
+            storage.setItem(name, serialize(value));
+        } catch (err) {
+            console.error(`[makePersisted] Failed to save "${name}":`, err);
+        }
+    });
+    if (sync && typeof window !== "undefined" && storage === localStorage) {
+        const onStorage = (e)=>{
+            if (e.key === name && e.newValue !== null && e.storageArea === storage) {
+                try {
+                    setter(()=>deserialize(e.newValue));
+                } catch (err) {
+                    console.warn(`[makePersisted] Failed to sync "${name}":`, err);
+                }
+            }
+        };
+        window.addEventListener("storage", onStorage);
+        onCleanup(()=>window.removeEventListener("storage", onStorage));
+    }
+    return signal;
+}
 const DISPOSE = Symbol("d");
 const HANDLERS = Symbol("h");
 const delegatedEvents = new Set();
@@ -668,7 +754,9 @@ function isSignalGetter(x) {
 const isChildThunk = isSignalGetter;
 const CAMEL_TO_KEBAB = /[A-Z]/g;
 function camelToKebab(k) {
-    return k.startsWith("--") ? k : k.replace(CAMEL_TO_KEBAB, (m)=>"-" + m.toLowerCase());
+    if (k.startsWith("--")) return k;
+    const out = k.replace(CAMEL_TO_KEBAB, (m)=>"-" + m.toLowerCase());
+    return out.startsWith("webkit-") || out.startsWith("moz-") || out.startsWith("ms-") || out.startsWith("apple-") ? "-" + out : out;
 }
 function normalizeStyle(input) {
     if (!input) return {};
@@ -1110,9 +1198,8 @@ function Match(props) {
 }
 export { createRoot as createRoot };
 export { createSignal1 as createSignal };
-export { createEffect as createEffect };
 export { createMemo1 as createMemo };
-export { onCleanup as onCleanup };
+export { derived as derived };
 export { h as h };
 export { Fragment as Fragment };
 export { render as render };
@@ -1120,3 +1207,4 @@ export { Show as Show };
 export { For as For };
 export { Switch as Switch };
 export { Match as Match };
+export { makePersisted as makePersisted };
