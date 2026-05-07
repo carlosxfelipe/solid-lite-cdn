@@ -18,6 +18,8 @@ compiler.
 - **Zero dependencies**: Pure JavaScript/TypeScript without external bloat.
 - **Deno & JSR Native**: Fully compatible with the modern JavaScript ecosystem.
 - **Lightweight**: Optimized for small bundles and fast CDN delivery.
+- **Built-in Persistence**: Includes `makePersisted` for easy `localStorage` integration.
+- **Derived Helper**: Includes `derived` for ergonomic inline reactive expressions.
 
 ## Installation
 
@@ -37,7 +39,7 @@ npx jsr add @carlosxfelipe/solid-lite
     createSignal,
     h,
     render,
-  } from "https://esm.sh/jsr/@carlosxfelipe/solid-lite@1.0.4";
+  } from "https://esm.sh/jsr/@carlosxfelipe/solid-lite@1.0.5";
 
   function Counter() {
     const [count, setCount] = createSignal(0);
@@ -113,6 +115,8 @@ Although inspired by SolidJS, **Solid Lite** is a pure runtime implementation wi
 | `<For each>` | `each={fn}` | `each={fn()}` |
 | Style Object | Supports nested signals | Requires called signals |
 | Mount | `createRoot` + `render` | `render(() => ..., el)` |
+| `makePersisted` | **Built-in** | Requires `@solid-primitives/storage` |
+| `derived` | `derived(() => ...)` helper | Not needed (handled by compiler) |
 | Directives | Not supported | Supported |
 
 
