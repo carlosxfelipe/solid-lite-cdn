@@ -675,47 +675,11 @@ const createSignal1 = (value, options)=>{
         tuple[1]
     ];
 };
-export { createEffect as createEffect };
 const createMemo1 = (fn)=>{
     const m = createMemo(fn);
     return tagAccessor(m);
 };
 const derived = (fn)=>tagAccessor(fn);
-export { onCleanup as onCleanup };
-function makePersisted(signal, options) {
-    const { name, storage = localStorage, serialize = (v)=>JSON.stringify(v), deserialize = (v)=>JSON.parse(v), sync = true } = options;
-    const [getter, setter] = signal;
-    const storedValue = storage.getItem(name);
-    if (storedValue !== null) {
-        try {
-            setter(()=>deserialize(storedValue));
-        } catch (err) {
-            console.warn(`[makePersisted] Failed to deserialize "${name}":`, err);
-        }
-    }
-    createEffect(()=>{
-        try {
-            const value = getter();
-            storage.setItem(name, serialize(value));
-        } catch (err) {
-            console.error(`[makePersisted] Failed to save "${name}":`, err);
-        }
-    });
-    if (sync && typeof window !== "undefined" && storage === localStorage) {
-        const onStorage = (e)=>{
-            if (e.key === name && e.newValue !== null && e.storageArea === storage) {
-                try {
-                    setter(()=>deserialize(e.newValue));
-                } catch (err) {
-                    console.warn(`[makePersisted] Failed to sync "${name}":`, err);
-                }
-            }
-        };
-        window.addEventListener("storage", onStorage);
-        onCleanup(()=>window.removeEventListener("storage", onStorage));
-    }
-    return signal;
-}
 const DISPOSE = Symbol("d");
 const HANDLERS = Symbol("h");
 const delegatedEvents = new Set();
@@ -1196,10 +1160,46 @@ function Match(props) {
         __isMatch: true
     };
 }
+function makePersisted(signal, options) {
+    const { name, storage = localStorage, serialize = (v)=>JSON.stringify(v), deserialize = (v)=>JSON.parse(v), sync = true } = options;
+    const [getter, setter] = signal;
+    const storedValue = storage.getItem(name);
+    if (storedValue !== null) {
+        try {
+            setter(()=>deserialize(storedValue));
+        } catch (err) {
+            console.warn(`[makePersisted] Failed to deserialize "${name}":`, err);
+        }
+    }
+    createEffect(()=>{
+        try {
+            const value = getter();
+            storage.setItem(name, serialize(value));
+        } catch (err) {
+            console.error(`[makePersisted] Failed to save "${name}":`, err);
+        }
+    });
+    if (sync && typeof window !== "undefined" && storage === localStorage) {
+        const onStorage = (e)=>{
+            if (e.key === name && e.newValue !== null && e.storageArea === storage) {
+                try {
+                    setter(()=>deserialize(e.newValue));
+                } catch (err) {
+                    console.warn(`[makePersisted] Failed to sync "${name}":`, err);
+                }
+            }
+        };
+        window.addEventListener("storage", onStorage);
+        onCleanup(()=>window.removeEventListener("storage", onStorage));
+    }
+    return signal;
+}
 export { createRoot as createRoot };
 export { createSignal1 as createSignal };
+export { createEffect as createEffect };
 export { createMemo1 as createMemo };
 export { derived as derived };
+export { onCleanup as onCleanup };
 export { h as h };
 export { Fragment as Fragment };
 export { render as render };
